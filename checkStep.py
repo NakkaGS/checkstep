@@ -104,9 +104,12 @@ class title:
         self.statusProg.configure(text='''Message''')
         self.statusProg.configure(background="#d9d9d9")
         self.statusProg.configure(width=440)
-        self.statusProg.pack(fill="both", expand="yes")
-        left = tk.Label(labelframe, text=checkStep_support.finishTask)
-        left.pack()
+        
+        self.message = tk.Label(self.statusProg, textvariable=checkStep_support.message)
+        self.message.configure(background="#d9d9d9")
+        self.message.configure(disabledforeground="#a3a3a3")
+        self.message.configure(foreground="#000000")
+        self.message.pack()
         
         self.awlFile = tk.Label(top)
         self.awlFile.place(relx=0.022, rely=0.031, height=21, width=52)

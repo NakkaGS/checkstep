@@ -9,6 +9,8 @@ import sys
 from tkinter import filedialog
 from tkinter import *
 
+import time
+
 try:
     import Tkinter as tk
 except ImportError:
@@ -25,7 +27,7 @@ def set_Tk_var():
     global awlpath #Label pathAWLFile
     awlpath = StringVar()
 
-    global prog_var
+    global prog_var #It was for progress bar
     prog_var = tk.IntVar()
 
     global checkCo #CheckBotton Comments
@@ -34,8 +36,8 @@ def set_Tk_var():
     global checkFB #CheckBotton Network
     checkFB = tk.IntVar()
 
-    global finishTask
-    finishTask = tk.StringVar()
+    global message #Label Message
+    message = tk.StringVar()
 
 def init(top, gui, *args, **kwargs):
     global w, top_level, root
@@ -43,6 +45,7 @@ def init(top, gui, *args, **kwargs):
     top_level = top
     root = top
     awlpath.set("AWL Path: ")
+    message.set("")
 
 def destroy_window():   
     # Function which closes the window.
@@ -57,17 +60,27 @@ if __name__ == '__main__':
 #Function to open browse and select awl file
 def awlBrowse():
     root = Tk() #withdraw() unable open extra window
+    root.withdraw()
     root.file = filedialog.askopenfilename(initialdir = "/",title = "Select AWL",filetypes = (("AWL file","*.awl"),("All files","*.*")))
     awlpath.set(root.file)
 
 #Function to do the logic when Start is selected
 def startProgram():
     if checkCo.get() == True:
-      comments(awlpath.get())
+        comments(awlpath.get())
+        message.set("")
+        message.set("Done - Check comments")
+        
     if checkFB.get() == True:
-      network(awlpath.get())
-    finishTask.set("Done")
-    
+        network(awlpath.get())
+        message.set("")
+        message.set("Done - Check networks")
+        
+    if (checkCo.get() and checkFB.get()) == False:
+        message.set("")
+        message.set("Select a option")
+
+        
 #Function to check if there is a network if comment
 def comments(awlfilepath):
    FB = ""
@@ -83,8 +96,6 @@ def comments(awlfilepath):
    num_lines = 0
    count = 0
    count = len(open(awlfilepath).readlines())
-
-
    
    #Open generated txt
    with open(awlfilepath, 'r') as file:
