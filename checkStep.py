@@ -97,6 +97,18 @@ class title:
         self.checkFBName.configure(text='''Check FB Name''')
         self.checkFBName.configure(variable=checkStep_support.checkFB)
 
+        self.checkDBInitialized = tk.Checkbutton(top)
+        self.checkDBInitialized.place(relx=0.022, rely=0.575, relheight=0.076, relwidth=0.292)
+        self.checkDBInitialized.configure(activebackground="#ececec")
+        self.checkDBInitialized.configure(activeforeground="#000000")
+        self.checkDBInitialized.configure(background="#d9d9d9")
+        self.checkDBInitialized.configure(disabledforeground="#a3a3a3")
+        self.checkDBInitialized.configure(highlightbackground="#d9d9d9")
+        self.checkDBInitialized.configure(highlightcolor="black")
+        self.checkDBInitialized.configure(justify='left')
+        self.checkDBInitialized.configure(text='''Check DB Initialized''')
+        self.checkDBInitialized.configure(variable=checkStep_support.checkDBinitialized)
+
         self.statusProg = tk.LabelFrame(top)
         self.statusProg.place(relx=0.022, rely=0.673, relheight=0.229, relwidth=0.963)
         self.statusProg.configure(relief='groove')

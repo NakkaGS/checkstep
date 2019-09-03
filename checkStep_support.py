@@ -8,6 +8,7 @@
 import sys
 from tkinter import filedialog
 from tkinter import *
+import timeit
 
 import time
 
@@ -36,8 +37,15 @@ def set_Tk_var():
     global checkFB #CheckBotton Network
     checkFB = tk.IntVar()
 
+    global checkDBinitialized #CheckBotton DB Initialized
+    checkDBinitialized = tk.IntVar()
+    
     global message #Label Message
     message = tk.StringVar()
+
+    global flag #CheckBotton Network
+    flag = tk.IntVar()
+
 
 def init(top, gui, *args, **kwargs):
     global w, top_level, root
@@ -46,6 +54,7 @@ def init(top, gui, *args, **kwargs):
     root = top
     awlpath.set("AWL Path: ")
     message.set("")
+    flag = 0
 
 def destroy_window():   
     # Function which closes the window.
@@ -66,76 +75,129 @@ def awlBrowse():
 
 #Function to do the logic when Start is selected
 def startProgram():
+    
+    start = timeit.default_timer()
+  
     if checkCo.get() == True:
+        print("///////////////////////////////////////////")
         comments(awlpath.get())
         message.set("")
-        message.set("Done - Check comments")
+        message.set("Done - Checking if there network with comments")
+        #print("Done Comments \n")
+        flag = 1
         
     if checkFB.get() == True:
+        print("///////////////////////////////////////////")
         network(awlpath.get())
         message.set("")
-        message.set("Done - Check networks")
+        message.set("Done - Checking if title's network is equal to FB Name")
+        #print("Done Title's Network \n")
+        flag = 1
+
+    if checkDBinitialized.get() == True:
+        print("///////////////////////////////////////////")
+        dbInitialized(awlpath.get())
+        message.set("")
+        message.set("Done - Checking if DB Initialized")
+        #print("Done DB Initialized \n")
+        flag = 1
         
     if (checkCo.get() and checkFB.get()) == False:
+      if flag == 0:
         message.set("")
         message.set("Select a option")
+        print("Select")
+
+    if flag == 1:
+        stop = timeit.default_timer()
+        print("///////////////////////////////////////////")
+        print('Time: ', stop - start)
+        flag = 0
 
         
 #Function to check if there is a network if comment
 def comments(awlfilepath):
+    
+   #initialize variables
    FB = ""
    same = ""
 
-   awl_com = open("generated/comments_awl.txt", "w") 
+   activeFB = 0
+   activeLogic = 0
+   find = 0
+   firstTitle = 0
+   flag = 0
 
    #string to compare if awl
-   stringToMatch = 'FUNCTION_BLOCK FB '
-   comment = "" #If is necessary to check if the network has a comments, change to ''
+   beginFB = 'FUNCTION_BLOCK FB '
+   endFB = 'END_FUNCTION_BLOCK'
+   title = 'TITLE ='
 
-   #initialize variables
-   num_lines = 0
-   count = 0
-   count = len(open(awlfilepath).readlines())
-   
+   beginLogic = 'BEGIN'
+   comment = '//'
+
    #Open generated txt
+   awl_com = open("generated/comments_awl.txt", "w") 
+
+   #Open AWL
    with open(awlfilepath, 'r') as file:
 
        for line in file:
 
-        #for progress bar... in process
-        num_lines += 1
-        progress = count/num_lines
-        update(progress)
-
         #There is a lengh difference when the decimal changes
-        if stringToMatch in line:
-
+        if beginFB in line:
             if len(line) == 23:
                FB = line[18:22]
             if len(line) == 22:
                FB = line[18:21]
             if len(line) == 21:
                FB = line[18:20]
+            activeFB = 1
                    
         #Change from STR to Int
         if FB == "":
             FB = 0
-            same = FB
             
         #Rules
         #We don't need to check FB 0-100 and 1600-1800
             
         #Safety FBs or Basic FBs
         if 1600 < int(str(FB)) < 1800 or 0 < int(str(FB)) < 200:
-            FB = 0
-            same = 0
+            activeFB = 0
             
-        #Logic   
-        if comment in line:
-            if same != FB and FB != 0: #to make sure that will appear just once the FB
-               #print(FB)
-               same = FB
-               awl_com.write("FB " + FB + "\n")
+        #Logic
+        #Find the FB Title
+        if firstTitle == 0 and activeFB == 1:            
+            if title in line:
+               firstTitle = 1
+               
+        #Find BEGIN that means that we are in the FB Logic - It's not necessary in this logic
+        if activeFB == 1:            
+            if beginLogic in line:
+               activeLogic = 1
+               
+        #check if the next line has "//"
+        if flag == 1:
+            if comment in line:
+                print("FB "+str(FB))
+                print(line)
+                flag = 0
+                find = 1
+
+        #After find the first TITLE=, it checks the Title Network and FB Name matchs
+        if firstTitle == 1 and activeLogic == 1 and activeFB == 1:
+            if title in line:
+                flag = 1
+
+        #Find END_FUNCTION_BLOCK        
+        if endFB in line:
+            if find == 1:
+                awl_com.write("FB " + str(FB) + "\n")
+            find = 0
+            activeLogic = 0
+            activeFB = 0
+            firstTitle = 0
+            flag = 0
    
    #Close generated txt
    awl_com.close()
@@ -143,65 +205,187 @@ def comments(awlfilepath):
    print("Checking if Network has Comments...DONE!\n")
     
 #Function to check if the network has the same name as the FG Name *needs to implement Symbol names
-def network(awlfilepath):
+def network(awlfilepath):#network
 
    #initialize variables
-   FB = ""
-   same = ""
-   mesmo = ""
-
+   FB = ''
    FBName = ''
+
+   activeFB = 0
+   activeLogic = 0
+   find = 0
+   firstTitle = 0
    
    #string to compare if awl
-   stringToMatch = 'FUNCTION_BLOCK FB '
+   beginFB = 'FUNCTION_BLOCK FB '
+   endFB = 'END_FUNCTION_BLOCK'
    title = 'TITLE ='
+
+   beginLogic = 'BEGIN'
+
    
    #Open generated txt
    awl_net = open("generated/network_awl.txt", "w")
-   
+
+   #Open AWL
    with open(awlfilepath, 'r') as file:
        
       for line in file:
 
         #There is a lengh difference when the decimal changes
-        if stringToMatch in line:      
+        if beginFB in line:      
             if len(line) == 23:
                FB = line[18:22]
             if len(line) == 22:
                FB = line[18:21]
             if len(line) == 21:
                FB = line[18:20]
-               
+            activeFB = 1
+            
         #Change from STR to Int
         if FB == "":
             FB = 0
-            same = FB
-            
+                
         #Rules
         #We don't need to check FB 0-100 and 1600-1800
             
         #Safety FBs or Basic FBs
         if 1600 < int(str(FB)) < 1800 or 0 < int(str(FB)) < 200:
-            FB = 0
-            same = 0
+            activeFB = 0
 
-        #Logic    
-        if title in line:
-            if same != FB and FB != 0: #to make sure that will appear just once the FB
+        #Logic
+        #Find the FB Title
+        if firstTitle == 0 and activeFB == 1:            
+            if title in line:
                FBName = line[7:16] #copy FB name from the network
-               same = FB
+               firstTitle = 1
+               
+        #Find BEGIN that means that we are in the FB Logic - It's not necessary in this logic
+        if activeFB == 1:            
+            if beginLogic in line:
+               activeLogic = 1
 
-            if same == FB and mesmo != FB and FB != 0:
-               if line[7:16] != FBName: #to make sure that will appear just once the FB
-                  #print("FB "+FB)
-                  awl_net.write("FB " + str(FB) + "\n")
-                  mesmo = FB
-   
+        #After find the first TITLE=, it checks the Title Network and FB Name matchs
+        if firstTitle == 1:
+            if title in line:
+                if activeLogic == 1 and activeFB == 1: #it means that we are inside a FB and in the logic part
+                    if FBName != None: #Just to check if FB name is not empty
+                        if line[7:16] != FBName: #to make sure that will appear just once the FB
+                           find = 1
+
+        #Find END_FUNCTION_BLOCK        
+        if endFB in line:
+            if find == 1:
+                print("FB "+str(FB))
+                awl_net.write("FB " + str(FB) + "\n")
+            find = 0
+            activeLogic = 0
+            activeFB = 0
+            firstTitle = 0
+            
    #Close generated txt
    awl_net.close()
    
-   print("Checking if Network matchs with FB Name...DONE!\n")
+   print("Checking if Title's Network has the FB Name...DONE!\n")
 
+def dbInitialized(awlfilepath): #dbInitialized
+   #initialize variables
+   DB = ""
+
+   flag = 0
+   ban = 0
+   finished = 0
+   activeDB = 0
+   
+   #string to compare if awl
+   beginDB = 'DATA_BLOCK DB '
+   endDB = 'END_DATA_BLOCK'
+   
+   beginStruct = 'S7_language :='
+   endStruct = 'BEGIN' #it's after declaration
+   
+   compareString = ':='
+   howToStruct = 'KNOW_HOW_PROTECT'
+   containsUDT = 'UDT'
+   itsIDB = 'SFB 52'
+   itsIDB_2 = 'SFB 53'
+
+   
+   #Open generated txt
+   awl_db = open("generated/comments_db.txt", "w") 
+
+   #Open AWL
+   with open(awlfilepath, 'r') as file: 
+      for line in file:
+
+        #There is a lengh difference when the decimal changes
+        if beginDB in line:
+            if len(line) == 16:
+               DB = line[14:15]
+            if len(line) == 17:
+               DB = line[14:16]
+            if len(line) == 18:
+               DB = line[14:17]
+            if len(line) == 19:
+               DB = line[14:18]
+            activeDB = 1
+            #print("DB "+DB)
+
+        #Start the part where we want to search
+        if beginStruct in line:
+            if activeDB == 1:
+                finished = 0
+                          
+        #Logic
+        #Find KNOW_HOW_PROTECT
+        if howToStruct in line:
+          if ban == 0 and finished == 0 and activeDB == 1:
+               ban = 1
+               print("DB "+DB + " is KNOW HOW PROTECTED and can not be checked")
+               flag = 1
+               
+        #Find IDB - SFB 52  
+        if itsIDB in line:
+          if ban == 0 and finished == 0 and activeDB == 1:
+               ban = 1
+               print("DB "+DB + " is Instanz DB and can not be checked")
+               flag = 2
+               
+        #Find IDB - SFB 53
+        if itsIDB_2 in line:
+          if ban == 0 and finished == 0 and activeDB == 1:
+               ban = 1
+               print("DB "+DB + " is Instanz DB and can not be checked")
+               flag = 2
+
+        #Find UDT
+        if containsUDT in line:
+           if ban == 0 and finished == 0 and activeDB == 1: #to make sure that will appear just once the FB
+               print("DB "+DB + " contains UDT Datas")
+               flag = 3
+               ban = 1
+
+        #Find :=    
+        if compareString in line:
+           if ban == 0 and flag == 0 and finished == 0 and activeDB == 1 : #to make sure that will appear just once the FB
+               #print("DB "+DB + ' is not initialized')
+               #print(line)
+               flag = 4
+
+        #When finds BEGIN, means that it leaving declaration                 
+        if endStruct in line:
+           if flag == 5: #STILL NOT WORKING
+               print("DB "+DB + ' is not initialized')
+           flag = 0
+           ban = 0
+           finished = 1
+
+        #Close DB   
+        if endDB in line:
+           activeDB = 0
+           
+        awl_db.close()
+           
 #Function to update the progress bar *NOT WORKING
 def update (v):
     #print ('Progress_Bar: update: v =', v)    
