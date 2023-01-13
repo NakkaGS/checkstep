@@ -1,9 +1,12 @@
 # Check AWL Step7
 
+![Python - Check AWL Step7](https://github.com/NakkaGS/checkstep/blob/master/img/Check_Step_7.png)
 There are two functions:
 
 1. Check if the Network has a comment
 2. Check if the Network name and FB Name are the same *needs to implement the Symbol File*
+
+
 
 ## Creating a executable 
 
